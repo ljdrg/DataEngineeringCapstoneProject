@@ -30,6 +30,8 @@ output_bucket = s3.Bucket(OUTPUT_S3_BUCKET)
 
 # data processing functions
 def create_spark_session():
+    """Creates a spark session.
+    """
     spark = SparkSession.builder.config("spark.jars.repositories", "https://repos.spark-packages.org/").\
             config("spark.jars.packages", "saurfang:spark-sas7bdat:2.0.0-s_2.11").\
             enableHiveSupport().getOrCreate()
@@ -37,12 +39,17 @@ def create_spark_session():
 
 
 def transform_datetime(date):
+    """Transforms SAS date into pandas timestamp.
+    """
     if date is not None:
         return pd.to_timedelta(date, unit='D') + pd.Timestamp('1960-1-1')
 transform_datetime_udf = udf(transform_datetime, DateType())
 
 
 def rename_columns(table, new_columns):
+    """Renames the columns of the spark dfs with new column names. 
+        new columns: list of column names
+    """
     for original, new in zip(table.columns, new_columns):
         table = table.withColumnRenamed(original, new)
     return table
@@ -189,9 +196,9 @@ def main():
     output_data = "output_data" #OUTPUT_S3_BUCKET
     
     process_immigration(spark, output_data)    
-    #process_labels_im(spark, output_data)
-    #process_temperature(spark, output_data)
-    #process_demography(spark, output_data)
+    process_labels_im(spark, output_data)
+    process_temperature(spark, output_data)
+    process_demography(spark, output_data)
     logging.info("Data processing completed")
 
 
