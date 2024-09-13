@@ -26,7 +26,7 @@ The primary purpose of this project is to integrate disparate datasets to provid
 ## Data Model
 
 Defined a star schema to organize the data optimally for analytical queries.
-Created dimension tables for immigrants, time, airports, and cities, and fact tables for immigration entries.
+Created dimension tables for immigrants, and cities, and fact tables for immigration entries.
 
 ![DataModel](data_model.png)
 
@@ -40,10 +40,6 @@ Dimension Tables:
 
 Immigrants: immigrant_id, name, age, gender, nationality, etc.
 
-Time: time_id, day, month, year, weekday, etc.
-
-Airports: portcode, city, state, airportname, etc.
-
 Cities: cityid, cityname, state, population, median_age, etc.
 
 Temperature: temperatureid, date, avgtemperature, city_id, etc.
@@ -51,6 +47,36 @@ Temperature: temperatureid, date, avgtemperature, city_id, etc.
 A data dictionary for the final data model is included, detailing each field and its purpose.
 
 [data_dictionary](data_dictionary.md)
+
+## Data Pipeline
+
+1. The data loaded in the workspace is used
+
+2. The immigration data is loaded into a spark dataframe
+    - Created tables are: 
+        - fact table immigration
+        - dim table person
+        - dim table airline
+    - the final tables are stored in the "output_data" dir
+3. The temperature data is loaded into a spark dataframe
+    - dim table temperature
+    - the final tables are stored in the "output_data" dir
+4. The demography data is loaded into a spark dataframe
+    - dim table demography
+    - the final tables are stored in the "output_data" dir
+4. Extract helper tables from immigration label description. The labels data is loaded into a spark dataframe
+    - created helper tables are: 
+        - Country Code
+        - City Code
+        - State Code
+    - the final tables are stored in the "output_data" dir
+        
+Note: 
+to use S3 instead of the workspace to load the data the following steps are required:
+    - define the source bucket in the `config.cfg` file
+    - upload the immigration data set and its labels description 
+    - upload the temperature data set
+    - and the demography data set
 
 ### Quality Assurance
 Implemented data quality checks to ensure the integrity and accuracy of the data.
@@ -61,6 +87,28 @@ Verified data consistency and correctness.
 Apache Spark: For efficient handling and processing of large datasets.
 Python: For scripting and implementation of the ETL processes.
 S3: For data storage and easy access.
+
+## Example Queries
+
+1. Question: What is the average age of immigrants arriving in Los Angeles?
+
+   `SELECT c.cityname, AVG(im.age) AS average_age_of_immigrants`
+   `FROM fact_im i`
+   `JOIN dim_im_person im ON i.immigrantid = im.immigrant_id`
+   `JOIN Cities c ON i.cityid = c.cityid`
+   `WHERE c.cityname = 'Los Angeles'`
+   `GROUP BY c.cityname;`
+   
+2. Question: How many immigrants arrived in each city in the April 2016?
+
+   `SELECT c.cityname, COUNT(i.immigrantid) AS number_of_immigrants`
+   `FROM fact_im i`
+   `JOIN Cities c ON i.cityid = c.cityid`
+   `WHERE i.arrivaldate BETWEEN '2016-04-01' AND '2016-04-31'`
+   `GROUP BY c.cityname`
+   `ORDER BY number_of_immigrants DESC;`
+
+
 
 ## Other Scenarios
 
